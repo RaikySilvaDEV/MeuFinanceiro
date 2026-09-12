@@ -1,109 +1,243 @@
 # Meu Financeiro
 
-Aplicação de controle financeiro com React, TypeScript, Vite e API PostgreSQL.
+Sistema web de controle financeiro pessoal, multiusuário e com persistência em PostgreSQL. Cada pessoa cria sua conta, faz login e acessa somente os próprios dados.
 
-## Desenvolvimento
+## Funcionalidades
 
-1. Copie `.env.example` para `.env`.
-2. Preencha `DATABASE_URL` com a URL do Neon e gere um `JWT_SECRET` aleatório.
-3. Execute a migração:
+### Conta e segurança
+
+- Cadastro e login com e-mail e senha.
+- Autenticação por JWT.
+- Senhas protegidas com `bcryptjs`.
+- Dados isolados por usuário no banco de dados.
+- Alteração de senha autenticada.
+- Sessão persistida no navegador.
+
+### Controle financeiro
+
+- Dashboard com saldo, receitas, despesas, valores pendentes e reservas.
+- Cadastro, edição e exclusão de lançamentos.
+- Receitas e despesas com descrição, categoria, conta, data, status e forma de pagamento.
+- Contas fixas com vencimento, recorrência e marcação de pagamento.
+- Transferências entre contas sem distorcer os totais de receita e despesa.
+- Calendário financeiro.
+- Relatórios resumidos de receitas, despesas e categorias.
+
+### Planejamento
+
+- Cadastro do salário líquido mensal.
+- Controle de vale-alimentação separado do saldo em dinheiro.
+- Percentual planejado para economia.
+- Orçamento por categoria.
+- Categorias padrão e categorias personalizadas.
+- Edição, exclusão e ocultação de categorias no perfil do usuário.
+- Lançamentos recorrentes com geração mensal sem duplicidade.
+
+### Metas
+
+- Criação de metas individuais.
+- Valor alvo, valor já reservado, valor mensal, prazo e prioridade.
+- Reserva automática de valores.
+- Descrição da reserva.
+- Lançamento vinculado à meta para manter o histórico.
+- Progresso visual da meta.
+
+### Cartões
+
+- Cadastro de cartões.
+- Limite, fechamento e vencimento.
+- Compras parceladas.
+- Faturas por mês.
+- Marcação de fatura como paga.
+- Histórico de faturas.
+- Alertas de contas e faturas em aberto.
+
+### Experiência de uso
+
+- Interface responsiva para desktop, tablet e celular.
+- Navegação lateral e inferior no mobile.
+- Ícones Lucide.
+- Modais para formulários e ações.
+- Skeletons específicos para cada página durante a navegação.
+- Tela de carregamento durante autenticação e carregamento dos dados.
+- Notificações flutuantes de sucesso, erro e informação.
+- Formatação monetária brasileira, como `1.729,64`.
+- Backup e restauração dos dados em JSON.
+
+## Tecnologias
+
+- React 19
+- TypeScript
+- Vite
+- Express
+- PostgreSQL
+- `pg`
+- JWT
+- `bcryptjs`
+- Lucide React
+- ESLint
+
+## Como funciona
+
+O frontend React conversa com a API Express por meio de endpoints autenticados. Após o login, o token JWT identifica o usuário. A API usa o identificador presente no token para buscar e salvar os dados somente na linha correspondente da tabela `finance_data`.
+
+Os dados financeiros são armazenados como um documento JSON associado ao usuário. Isso permite evoluir o modelo do frontend mantendo compatibilidade por meio da função `normalizeData()`.
+
+Despesas pagas com **Vale alimentação**:
+
+- aparecem normalmente nos lançamentos e relatórios;
+- reduzem o saldo disponível do vale;
+- não reduzem o saldo das contas em dinheiro;
+- não reduzem o saldo bancário consolidado.
+
+## Pré-requisitos
+
+- Node.js 18 ou superior.
+- npm.
+- PostgreSQL, localmente ou em um provedor como Neon.
+
+## Configuração local
+
+### 1. Instale as dependências
+
+```bash
+npm install
+```
+
+### 2. Configure as variáveis de ambiente
+
+Copie o arquivo de exemplo:
+
+```bash
+copy .env.example .env
+```
+
+No Linux ou macOS:
+
+```bash
+cp .env.example .env
+```
+
+Preencha o `.env`:
+
+```env
+DATABASE_URL=postgresql://usuario:senha@host:5432/banco?sslmode=require
+JWT_SECRET=uma-chave-longa-e-aleatoria
+WEB_ORIGIN=http://localhost:5173
+PORT=3001
+```
+
+Nunca envie `.env`, senha do banco ou `JWT_SECRET` para o GitHub.
+
+### 3. Crie as tabelas
 
 ```bash
 npm run db:migrate
 ```
 
-4. Em um terminal, execute a API:
+A migração cria:
 
-```bash
-npm run api
-```
+- `users`: usuários cadastrados;
+- `finance_data`: dados financeiros associados a cada usuário.
 
-5. Em outro terminal, execute o frontend:
+### 4. Execute o projeto
+
+Para iniciar API e frontend juntos:
 
 ```bash
 npm run dev
 ```
 
-Nunca coloque a URL do banco ou o `JWT_SECRET` no frontend, no Git ou em mensagens públicas.
+Ou execute separadamente:
 
-## Estrutura
-
-- `src/domain`: tipos e regras financeiras.
-- `src/components`: componentes visuais.
-- `src/services`: comunicação com a API.
-- `server`: autenticação e persistência no PostgreSQL.
-- `sql`: migrações do banco.
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run api
+npm run frontend
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+URLs padrão:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Frontend: http://localhost:5173
+- API: http://localhost:3001
+- Health check: http://localhost:3001/api/health
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Scripts disponíveis
 
+| Comando | Descrição |
+| --- | --- |
+| `npm run dev` | Inicia API e frontend juntos |
+| `npm run frontend` | Inicia o Vite |
+| `npm run api` | Inicia a API Express |
+| `npm run db:migrate` | Executa as migrações PostgreSQL |
+| `npm run build` | Executa type-check e build de produção |
+| `npm run lint` | Executa o ESLint |
+
+No Windows, se o PowerShell bloquear `npm.ps1`, use `npm.cmd`, por exemplo:
+
+```powershell
+npm.cmd run build
+npm.cmd run lint
 ```
+
+## Estrutura do projeto
+
+```text
+.
+├── server/
+│   ├── db.ts
+│   ├── index.ts
+│   └── migrate.ts
+├── sql/
+│   └── 001_initial.sql
+├── src/
+│   ├── components/
+│   ├── domain/
+│   ├── services/
+│   ├── App.tsx
+│   └── index.css
+├── .env.example
+├── dev.mjs
+├── package.json
+└── vite.config.ts
+```
+
+### Responsabilidade dos diretórios
+
+- `src/domain`: tipos, normalização, categorias e regras financeiras.
+- `src/components`: componentes reutilizáveis de planejamento e orçamento.
+- `src/services`: comunicação do frontend com a API.
+- `src/App.tsx`: composição da aplicação, autenticação, navegação, modais e operações.
+- `server`: API, autenticação, autorização e persistência.
+- `sql`: estrutura inicial do banco.
+
+## Persistência e isolamento
+
+Todas as operações financeiras usam o token do usuário autenticado. A API nunca recebe um `user_id` enviado pelo frontend para decidir o proprietário dos dados; ela extrai o usuário do JWT e usa esse identificador nas consultas.
+
+O salvamento utiliza `INSERT ... ON CONFLICT DO UPDATE`, garantindo que o primeiro salvamento de um usuário também seja persistido corretamente.
+
+## Validação
+
+Antes de enviar alterações:
+
+```bash
+npm run lint
+npm run build
+```
+
+## Segurança
+
+- Mantenha o `.env` fora do controle de versão.
+- Use um `JWT_SECRET` diferente em cada ambiente.
+- Use uma conexão PostgreSQL com SSL em produção.
+- Configure `WEB_ORIGIN` somente para os domínios autorizados.
+- Não compartilhe tokens, senhas ou URLs privadas do banco.
+
+## Próximos passos sugeridos
+
+- Filtros avançados por período, conta e categoria.
+- Exportação CSV, Excel e PDF.
+- Recuperação de senha por e-mail.
+- Tema escuro.
+- Importação de extratos bancários.
+- PWA e notificações do navegador.
