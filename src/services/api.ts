@@ -5,7 +5,12 @@ type AuthResponse = { user: User; token: string }
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(path, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } })
   const body = await response.text()
-  const payload: unknown = body ? JSON.parse(body) : undefined
+  let payload: unknown
+  try {
+    payload = body ? JSON.parse(body) : undefined
+  } catch {
+    throw new Error(response.ok ? 'A resposta da API é inválida.' : 'A API não está disponível neste endereço. Verifique a configuração do deploy.')
+  }
   if (!response.ok) throw new Error((payload as { message?: string } | undefined)?.message || 'Não foi possível concluir a operação.')
   return payload as T
 }

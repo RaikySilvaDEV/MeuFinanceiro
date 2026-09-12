@@ -161,6 +161,26 @@ URLs padrão:
 - API: http://localhost:3001
 - Health check: http://localhost:3001/api/health
 
+## Deploy no Vercel
+
+O projeto já possui uma função serverless em `api/[...path].ts`. Ela encaminha as rotas `/api/*` para a API Express, enquanto o frontend continua usando os caminhos relativos `/api/...`.
+
+No projeto da Vercel, configure estas variáveis em **Settings > Environment Variables** para os ambientes usados no deploy:
+
+```env
+DATABASE_URL=postgresql://...
+JWT_SECRET=uma-chave-longa-e-aleatoria
+WEB_ORIGIN=https://seu-projeto.vercel.app
+```
+
+Depois de salvar as variáveis, faça um novo deploy. O endpoint abaixo deve responder JSON:
+
+```text
+https://seu-projeto.vercel.app/api/health
+```
+
+Se o endpoint retornar uma página HTML ou `The page could not be found`, a função da API não foi publicada ou o deploy ainda está usando uma versão anterior do projeto.
+
 ## Scripts disponíveis
 
 | Comando | Descrição |

@@ -82,4 +82,8 @@ app.put('/api/data', authenticate, async (request: AuthRequest, response) => {
   response.status(204).end()
 })
 
-app.listen(port, () => console.log(`API running on http://localhost:${port}`))
+export default app
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => console.log(`API running on http://localhost:${port}`))
+}
