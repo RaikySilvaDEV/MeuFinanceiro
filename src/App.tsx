@@ -5,7 +5,7 @@ import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, 
 import Planning from './components/Planning'
 import { api } from './services/api'
 import { isCurrentMonth } from './domain/planning'
-import { AlertCircle, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, CreditCard, Info, LayoutDashboard, LogOut, Pencil, Plus, Receipt, Repeat, Settings, Target, Trash2, Wallet, X } from 'lucide-react'
+import { AlertCircle, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, CreditCard, Info, KeyRound, LayoutDashboard, LogOut, Pencil, Plus, Receipt, Repeat, Settings, Target, Trash2, UserRound, Wallet, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export default function App() {
@@ -17,8 +17,10 @@ export default function App() {
   const [data, setData] = useState<Data>(freshData)
   const [loading, setLoading] = useState(Boolean(user && token))
   const [tab, setTab] = useState<Tab>('home')
+  const [accountPage, setAccountPage] = useState<'profile' | 'password' | null>(null)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [pageLoading, setPageLoading] = useState(false)
-  const [modal, setModal] = useState<'transaction' | 'fixed' | 'goal' | 'account' | 'card' | 'installment' | 'transfer' | 'password' | 'reserve' | null>(null)
+  const [modal, setModal] = useState<'transaction' | 'fixed' | 'goal' | 'account' | 'card' | 'installment' | 'transfer' | 'reserve' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
   const [noticeTone, setNoticeTone] = useState<'error' | 'success' | 'info'>('error')
@@ -51,6 +53,14 @@ export default function App() {
     setTab(next)
     setPageLoading(true)
     window.setTimeout(() => setPageLoading(false), 280)
+  }
+  const logout = () => {
+    setUser(null)
+    setToken('')
+    setAccountPage(null)
+    setProfileOpen(false)
+    localStorage.removeItem('meu-financeiro-session')
+    localStorage.removeItem('meu-financeiro-token')
   }
   const generateRecurring = () => {
     const month = today().slice(0, 7)
@@ -179,9 +189,9 @@ export default function App() {
   const filtered = data.transactions.filter(t => (filter === 'all' || t.kind === filter || t.status === filter) && (`${t.description} ${t.category}`.toLowerCase().includes(query.toLowerCase())))
 
   return <div className="app-shell">
-    <aside className="sidebar"><div className="brand">Meu<span>Financeiro</span></div><nav>{nav.map(([id, Icon, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={18} strokeWidth={2} />{label}</button>)}</nav><button className="logout" onClick={() => { setUser(null); setToken(''); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }}>Sair</button></aside>
-    <main className="main"><header><div><small>Olá, {user.name.split(' ')[0]} 👋</small><h1>{nav.find(n => n[0] === tab)?.[2]}</h1></div><button className="avatar" onClick={() => setModal('password')} aria-label="Abrir configurações da conta" title="Configurações da conta"><Settings size={20} strokeWidth={2.2} /></button></header>
-      {pageLoading ? <PageSkeleton tab={tab} /> : <>{tab === 'home' && <Dashboard totals={totals} data={data} onNew={() => setModal('transaction')} onNavigate={navigate} />}
+    <aside className="sidebar"><div className="brand">Meu<span>Financeiro</span></div><nav>{nav.map(([id, Icon, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={18} strokeWidth={2} />{label}</button>)}</nav><button className="logout" onClick={logout}>Sair</button></aside>
+    <main className="main"><header><div><small>Olá, {user.name.split(' ')[0]} 👋</small><h1>{accountPage === 'password' ? 'Redefinir senha' : accountPage === 'profile' ? 'Meu perfil' : nav.find(n => n[0] === tab)?.[2]}</h1></div><div className="profile-anchor"><button className="avatar" onClick={() => setProfileOpen(value => !value)} aria-label="Abrir perfil da conta" aria-expanded={profileOpen} title="Perfil da conta"><Settings size={20} strokeWidth={2.2} /></button>{profileOpen && <div className="profile-menu"><div className="profile-summary"><UserRound size={18} /><div><strong>{user.name}</strong><small>{user.email}</small></div></div><button onClick={() => { setAccountPage('profile'); setProfileOpen(false) }}><UserRound size={16} /> Meu perfil</button><button onClick={() => { setAccountPage('password'); setProfileOpen(false) }}><KeyRound size={16} /> Redefinir senha</button><button className="profile-logout" onClick={logout}><LogOut size={16} /> Sair</button></div>}</div></header>
+      {accountPage === 'password' ? <section className="page account-page"><button className="back-link" onClick={() => setAccountPage('profile')}>← Voltar ao perfil</button><div className="account-panel"><div className="account-panel-icon"><KeyRound size={22} /></div><h2>Redefinir senha</h2><p>Escolha uma nova senha para proteger sua conta.</p><PasswordForm token={token} onDone={() => { setAccountPage('profile'); notify('Senha alterada com sucesso.', 'success') }} onError={setNotice} /></div></section> : accountPage === 'profile' ? <section className="page account-page"><div className="account-panel profile-panel"><div className="profile-avatar"><UserRound size={28} /></div><h2>{user.name}</h2><p>{user.email}</p><div className="profile-actions"><button className="primary full" onClick={() => setAccountPage('password')}><KeyRound size={17} /> Redefinir senha</button><button className="secondary full" onClick={logout}><LogOut size={17} /> Sair da conta</button></div></div></section> : pageLoading ? <PageSkeleton tab={tab} /> : <>{tab === 'home' && <Dashboard totals={totals} data={data} onNew={() => setModal('transaction')} onNavigate={navigate} />}
       {tab === 'transactions' && <section className="page"><div className="page-title"><div><h2>Todos os lançamentos</h2><p>Pesquise, filtre e mantenha tudo organizado.</p></div><button className="primary" onClick={() => setModal('transaction')}>+ Novo lançamento</button></div><div className="toolbar"><input placeholder="Pesquisar lançamento..." value={query} onChange={e => setQuery(e.target.value)} />{(['all', 'income', 'expense', 'paid', 'pending'] as const).map(f => <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>{f === 'all' ? 'Todos' : f === 'income' ? 'Entradas' : f === 'expense' ? 'Saídas' : f === 'paid' ? 'Pagos' : 'Pendentes'}</button>)}</div><TransactionList items={filtered} data={data} onEdit={(id) => { setEditing(id); setModal('transaction') }} onDelete={deleteTransaction} /></section>}
       {tab === 'fixed' && <FixedPage data={data} totals={totals} onNew={() => setModal('fixed')} onEdit={(id) => { setEditing(id); setModal('fixed') }} onPay={toggleFixed} onDelete={deleteFixed} />}
       {tab === 'goals' && <GoalsPage data={data} onNew={() => setModal('goal')} onReserve={openReserve} onEdit={(id) => { setEditing(id); setModal('goal') }} onDelete={(id) => update({ ...data, goals: data.goals.filter(g => g.id !== id) })} />}
@@ -192,14 +202,12 @@ export default function App() {
       {tab === 'reports' && <Reports data={data} totals={totals} />}</>}
     </main>
     <nav className="bottom-nav">{nav.slice(0, 5).map(([id, Icon, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={18} />{label}</button>)}</nav>
-    <button className="mobile-logout" onClick={() => { setUser(null); setToken(''); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }}><LogOut size={17} />Sair</button>
     <button className="fab" onClick={() => setModal('transaction')} aria-label="Novo lançamento"><Plus size={25} /></button>
     {modal === 'transaction' && <Modal title={editing ? 'Editar lançamento' : 'Novo lançamento'} onClose={closeModal}><TransactionForm data={data} initial={data.transactions.find(t => t.id === editing)} onSubmit={saveTransaction} /></Modal>}
     {modal === 'fixed' && <Modal title={editing ? 'Editar conta fixa' : 'Nova conta fixa'} onClose={closeModal}><FixedForm data={data} initial={data.fixed.find(f => f.id === editing)} onSubmit={saveFixed} /></Modal>}
     {modal === 'goal' && <Modal title={editing ? 'Editar meta' : 'Nova meta'} onClose={closeModal}><GoalForm data={data} initial={data.goals.find(g => g.id === editing)} onSubmit={(goal) => { if (!goal.name || !finiteNonNegative(goal.target) || goal.target <= 0 || !finiteNonNegative(goal.current) || !finiteNonNegative(goal.monthly) || (goal.deadline && !validDate(goal.deadline))) return setNotice('Informe valores válidos para a meta e uma data correta.'); update({ ...data, goals: editing ? data.goals.map(g => g.id === editing ? { ...goal, id: editing } : g) : [...data.goals, { ...goal, id: uid() }] }); closeModal() }} /></Modal>}
     {modal === 'account' && <Modal title="Nova conta" onClose={closeModal}><AccountForm onSubmit={(account) => { if (!account.name || !finiteNonNegative(account.balance)) return setNotice('Informe um nome e saldo inicial válido.'); update({ ...data, accounts: [...data.accounts, { ...account, id: uid() }] }); closeModal() }} /></Modal>}
     {modal === 'transfer' && <Modal title="Transferir entre contas" onClose={closeModal}><TransferForm data={data} onSubmit={(transfer) => { if (!transfer.description || transfer.fromId === transfer.toId || !finiteNonNegative(transfer.amount) || transfer.amount <= 0 || !validDate(transfer.date)) return setNotice('Informe contas diferentes, valor e data válidos.'); const transferId = uid(); const source: Transaction = { id: uid(), transferId, kind: 'expense', amount: transfer.amount, description: transfer.description, category: 'Transferência', accountId: transfer.fromId, method: 'Transferência', date: transfer.date, status: 'paid' }; const destination: Transaction = { id: uid(), transferId, kind: 'income', amount: transfer.amount, description: transfer.description, category: 'Transferência', accountId: transfer.toId, method: 'Transferência', date: transfer.date, status: 'paid' }; update({ ...data, transactions: [source, destination, ...data.transactions] }); closeModal() }} /></Modal>}
-    {modal === 'password' && <Modal title="Segurança da conta" onClose={closeModal}><PasswordForm token={token} onDone={() => { closeModal(); notify('Senha alterada com sucesso.', 'success') }} onError={setNotice} /></Modal>}
     {modal === 'reserve' && reserveGoal && <Modal title={`Reservar para ${reserveGoal.name}`} onClose={() => { setReserveGoal(null); closeModal() }}><ReserveForm goal={reserveGoal} available={totals.available} onSubmit={reserve} /></Modal>}
     {modal === 'card' && <Modal title="Novo cartão" onClose={closeModal}><CardForm onSubmit={(card) => { if (!card.name || !finiteNonNegative(card.limit) || card.limit <= 0 || !Number.isInteger(card.closing) || card.closing < 1 || card.closing > 31 || !Number.isInteger(card.due) || card.due < 1 || card.due > 31) return setNotice('Informe nome, limite e datas válidos.'); update({ ...data, cards: [...data.cards, { ...card, id: uid() }] }); closeModal() }} /></Modal>}
     {modal === 'installment' && <Modal title="Compra parcelada" onClose={closeModal}><InstallmentForm data={data} onSubmit={(item) => { if (!item.description || !data.cards.some(c => c.id === item.cardId) || !finiteNonNegative(item.amount) || item.amount <= 0 || !Number.isInteger(item.total) || item.total < 1 || !validDate(item.date)) return setNotice('Preencha valores, cartão e data válidos.'); const firstDate = new Date(`${item.date}T12:00:00`); update({ ...data, installments: [...data.installments, ...Array.from({ length: item.total }, (_, i) => { const date = new Date(firstDate.getFullYear(), firstDate.getMonth() + i, firstDate.getDate()); return { ...item, id: uid(), current: i + 1, amount: item.amount / item.total, date: date.toISOString().slice(0, 10) } })] }); closeModal() }} /></Modal>}
