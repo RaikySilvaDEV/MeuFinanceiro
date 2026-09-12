@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { Account, Card, Data, Fixed, Goal, Installment, Kind, Status, Tab, Transaction, User } from './domain/types'
 import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, freshData, isMealAllowanceExpense, money, normalizeData, parseMoney, paymentMethods, readJson, today, uid, validDate } from './domain/finance'
@@ -19,6 +19,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home')
   const [accountPage, setAccountPage] = useState<'profile' | 'password' | null>(null)
   const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState<'transaction' | 'fixed' | 'goal' | 'account' | 'card' | 'installment' | 'transfer' | 'reserve' | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
@@ -38,6 +39,14 @@ export default function App() {
     const timeout = window.setTimeout(() => setNotice(''), noticeTone === 'error' ? 5200 : 3600)
     return () => window.clearTimeout(timeout)
   }, [notice, noticeTone])
+  useEffect(() => {
+    if (!profileOpen) return
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) setProfileOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick)
+  }, [profileOpen])
   useEffect(() => {
     if (!user || !token) return
     api.loadData(token).then(remoteData => setData(normalizeData(remoteData))).catch(() => { setUser(null); setToken(''); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }).finally(() => { setLoading(false) })
@@ -190,7 +199,7 @@ export default function App() {
 
   return <div className="app-shell">
     <aside className="sidebar"><div className="brand">Meu<span>Financeiro</span></div><nav>{nav.map(([id, Icon, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={18} strokeWidth={2} />{label}</button>)}</nav><button className="logout" onClick={logout}>Sair</button></aside>
-    <main className="main"><header><div><small>Olá, {user.name.split(' ')[0]} 👋</small><h1>{accountPage === 'password' ? 'Redefinir senha' : accountPage === 'profile' ? 'Meu perfil' : nav.find(n => n[0] === tab)?.[2]}</h1></div><div className="profile-anchor"><button className="avatar" onClick={() => setProfileOpen(value => !value)} aria-label="Abrir perfil da conta" aria-expanded={profileOpen} title="Perfil da conta"><Settings size={20} strokeWidth={2.2} /></button>{profileOpen && <div className="profile-menu"><div className="profile-summary"><UserRound size={18} /><div><strong>{user.name}</strong><small>{user.email}</small></div></div><button onClick={() => { setAccountPage('profile'); setProfileOpen(false) }}><UserRound size={16} /> Meu perfil</button><button onClick={() => { setAccountPage('password'); setProfileOpen(false) }}><KeyRound size={16} /> Redefinir senha</button><button className="profile-logout" onClick={logout}><LogOut size={16} /> Sair</button></div>}</div></header>
+    <main className="main"><header><div><small>Olá, {user.name.split(' ')[0]} 👋</small><h1>{accountPage === 'password' ? 'Redefinir senha' : accountPage === 'profile' ? 'Meu perfil' : nav.find(n => n[0] === tab)?.[2]}</h1></div><div className="profile-anchor" ref={profileRef}><button className="avatar" onClick={() => setProfileOpen(value => !value)} aria-label="Abrir perfil da conta" aria-expanded={profileOpen} title="Perfil da conta"><Settings size={20} strokeWidth={2.2} /></button>{profileOpen && <div className="profile-menu"><div className="profile-summary"><UserRound size={18} /><div><strong>{user.name}</strong><small>{user.email}</small></div></div><button onClick={() => { setAccountPage('profile'); setProfileOpen(false) }}><UserRound size={16} /> Meu perfil</button><button onClick={() => { setAccountPage('password'); setProfileOpen(false) }}><KeyRound size={16} /> Redefinir senha</button><button className="profile-logout" onClick={logout}><LogOut size={16} /> Sair</button></div>}</div></header>
       {accountPage === 'password' ? <section className="page account-page"><button className="back-link" onClick={() => setAccountPage('profile')}>← Voltar ao perfil</button><div className="account-panel"><div className="account-panel-icon"><KeyRound size={22} /></div><h2>Redefinir senha</h2><p>Escolha uma nova senha para proteger sua conta.</p><PasswordForm token={token} onDone={() => { setAccountPage('profile'); notify('Senha alterada com sucesso.', 'success') }} onError={setNotice} /></div></section> : accountPage === 'profile' ? <section className="page account-page"><div className="account-panel profile-panel"><div className="profile-avatar"><UserRound size={28} /></div><h2>{user.name}</h2><p>{user.email}</p><div className="profile-actions"><button className="primary full" onClick={() => setAccountPage('password')}><KeyRound size={17} /> Redefinir senha</button><button className="secondary full" onClick={logout}><LogOut size={17} /> Sair da conta</button></div></div></section> : pageLoading ? <PageSkeleton tab={tab} /> : <>{tab === 'home' && <Dashboard totals={totals} data={data} onNew={() => setModal('transaction')} onNavigate={navigate} />}
       {tab === 'transactions' && <section className="page"><div className="page-title"><div><h2>Todos os lançamentos</h2><p>Pesquise, filtre e mantenha tudo organizado.</p></div><button className="primary" onClick={() => setModal('transaction')}>+ Novo lançamento</button></div><div className="toolbar"><input placeholder="Pesquisar lançamento..." value={query} onChange={e => setQuery(e.target.value)} />{(['all', 'income', 'expense', 'paid', 'pending'] as const).map(f => <button key={f} className={filter === f ? 'selected' : ''} onClick={() => setFilter(f)}>{f === 'all' ? 'Todos' : f === 'income' ? 'Entradas' : f === 'expense' ? 'Saídas' : f === 'paid' ? 'Pagos' : 'Pendentes'}</button>)}</div><TransactionList items={filtered} data={data} onEdit={(id) => { setEditing(id); setModal('transaction') }} onDelete={deleteTransaction} /></section>}
       {tab === 'fixed' && <FixedPage data={data} totals={totals} onNew={() => setModal('fixed')} onEdit={(id) => { setEditing(id); setModal('fixed') }} onPay={toggleFixed} onDelete={deleteFixed} />}
