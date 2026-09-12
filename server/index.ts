@@ -13,6 +13,10 @@ if (!jwtSecret) throw new Error('JWT_SECRET is required to start the API.')
 
 app.use(cors({ origin: process.env.WEB_ORIGIN || 'http://localhost:5173', credentials: true }))
 app.use(express.json({ limit: '1mb' }))
+app.use((request, _response, next) => {
+  if (!request.url.startsWith('/api/')) request.url = `/api${request.url}`
+  next()
+})
 
 type AuthRequest = express.Request & { userId?: string }
 const authenticate = (request: AuthRequest, response: express.Response, next: express.NextFunction) => {
