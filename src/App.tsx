@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { Account, Card, Data, Fixed, Goal, Installment, Kind, Status, Tab, Transaction, User } from './domain/types'
 import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, freshData, isMealAllowanceExpense, money, normalizeData, parseMoney, paymentMethods, readJson, today, uid, validDate } from './domain/finance'
@@ -26,10 +26,6 @@ export default function App() {
   const [filter, setFilter] = useState<'all' | Kind | Status>('all')
   const [onboarding, setOnboarding] = useState(false)
   const [reserveGoal, setReserveGoal] = useState<Goal | null>(null)
-  const authRef = useRef({ user, token })
-  useEffect(() => {
-    authRef.current = { user, token }
-  }, [user, token])
   const notify = (message: string, tone: 'error' | 'success' | 'info' = 'error') => {
     setNoticeTone(tone)
     setNotice(message)
@@ -46,8 +42,8 @@ export default function App() {
   }, [user, token])
   const update = (next: Data) => {
     setData(next)
-    const { user: currentUser, token: currentToken } = authRef.current
-    if (!currentUser || !currentToken) return
+    const currentToken = readJson<string>('meu-financeiro-token', '')
+    if (!currentToken) return
     void api.saveData(currentToken, next).catch(() => notify('Não foi possível salvar os dados no servidor.'))
   }
   const navigate = (next: Tab) => {
