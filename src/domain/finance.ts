@@ -25,7 +25,11 @@ export const today = () => new Date().toISOString().slice(0, 10)
 
 export const parseMoney = (value: string) => {
   const compact = value.trim().replace(/\s/g, '')
-  const normalized = compact.includes(',') ? compact.replace(/\./g, '').replace(',', '.') : compact
+  const normalized = compact.includes(',')
+    ? compact.replace(/\./g, '').replace(',', '.')
+    : /^\d{1,3}(?:\.\d{3})+$/.test(compact)
+      ? compact.replace(/\./g, '')
+      : compact
   return Number(normalized)
 }
 
