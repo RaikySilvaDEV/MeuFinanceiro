@@ -43,7 +43,7 @@ export default function App() {
   }, [user, token])
   const update = (next: Data) => {
     setData(next)
-    if (!user || !token || loading) return
+    if (!user || !token) return
     saveQueue.current = saveQueue.current
       .then(() => api.saveData(token, next))
       .catch(() => notify('Não foi possível salvar os dados no servidor.'))
