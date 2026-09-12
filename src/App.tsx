@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { Account, Card, Data, Fixed, Goal, Installment, Kind, Status, Tab, Transaction, User } from './domain/types'
 import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, freshData, isMealAllowanceExpense, money, normalizeData, parseMoney, paymentMethods, readJson, today, uid, validDate } from './domain/finance'
@@ -27,6 +27,7 @@ export default function App() {
   const [filter, setFilter] = useState<'all' | Kind | Status>('all')
   const [onboarding, setOnboarding] = useState(false)
   const [reserveGoal, setReserveGoal] = useState<Goal | null>(null)
+  const saveQueue = useRef(Promise.resolve())
   const notify = (message: string, tone: 'error' | 'success' | 'info' = 'error') => {
     setNoticeTone(tone)
     setNotice(message)
@@ -42,7 +43,11 @@ export default function App() {
     api.loadData(token).then(remoteData => setData(normalizeData(remoteData))).catch(() => { setUser(null); setToken(''); setDataReady(false); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }).finally(() => { setLoading(false); setDataReady(true) })
   }, [user, token])
   useEffect(() => {
-    if (user && token && !loading && dataReady) void api.saveData(token, data).catch(() => notify('Não foi possível salvar os dados no servidor.'))
+    if (!user || !token || loading || !dataReady) return
+    const snapshot = data
+    saveQueue.current = saveQueue.current
+      .then(() => api.saveData(token, snapshot))
+      .catch(() => notify('Não foi possível salvar os dados no servidor.'))
   }, [data, dataReady, loading, token, user])
   const update = (next: Data) => setData(next)
   const navigate = (next: Tab) => {
