@@ -1,0 +1,14 @@
+export type Kind = 'income' | 'expense'
+export type Status = 'paid' | 'pending'
+export type Tab = 'home' | 'transactions' | 'fixed' | 'planning' | 'goals' | 'accounts' | 'cards' | 'calendar' | 'reports'
+export type User = { id: string; name: string; email: string; password?: string }
+export type Account = { id: string; name: string; type: string; balance: number; active: boolean }
+export type Transaction = { id: string; kind: Kind; amount: number; description: string; category: string; accountId: string; method: string; date: string; status: Status; fixedId?: string; transferId?: string; recurringId?: string; goalId?: string }
+export type Fixed = { id: string; name: string; amount: number; category: string; due: number; accountId: string; method: string; recurrence: string; active: boolean; paid: boolean; paidTransaction?: string }
+export type Goal = { id: string; name: string; target: number; current: number; monthly: number; deadline: string; priority: string }
+export type Budget = { id: string; category: string; limit: number }
+export type Card = { id: string; name: string; limit: number; closing: number; due: number; paidInvoices?: string[] }
+export type Installment = { id: string; cardId: string; description: string; amount: number; total: number; current: number; date: string }
+export type RecurringTransaction = { id: string; kind: Kind; amount: number; description: string; category: string; accountId: string; method: string; day: number; status: Status; active: boolean }
+export type CustomCategories = { income: string[]; expense: string[]; hiddenIncome: string[]; hiddenExpense: string[] }
+export type Data = { netSalary: number; mealAllowance: number; savings: number; customCategories: CustomCategories; accounts: Account[]; transactions: Transaction[]; fixed: Fixed[]; recurring: RecurringTransaction[]; goals: Goal[]; budgets: Budget[]; cards: Card[]; installments: Installment[] }
