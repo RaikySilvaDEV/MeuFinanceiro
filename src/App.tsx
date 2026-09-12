@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { Account, Card, Data, Fixed, Goal, Installment, Kind, Status, Tab, Transaction, User } from './domain/types'
 import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, freshData, isMealAllowanceExpense, money, normalizeData, parseMoney, paymentMethods, readJson, today, uid, validDate } from './domain/finance'
@@ -26,7 +26,6 @@ export default function App() {
   const [filter, setFilter] = useState<'all' | Kind | Status>('all')
   const [onboarding, setOnboarding] = useState(false)
   const [reserveGoal, setReserveGoal] = useState<Goal | null>(null)
-  const saveQueue = useRef(Promise.resolve())
   const notify = (message: string, tone: 'error' | 'success' | 'info' = 'error') => {
     setNoticeTone(tone)
     setNotice(message)
@@ -44,9 +43,7 @@ export default function App() {
   const update = (next: Data) => {
     setData(next)
     if (!user || !token) return
-    saveQueue.current = saveQueue.current
-      .then(() => api.saveData(token, next))
-      .catch(() => notify('Não foi possível salvar os dados no servidor.'))
+    void api.saveData(token, next).catch(() => notify('Não foi possível salvar os dados no servidor.'))
   }
   const navigate = (next: Tab) => {
     if (next === tab) return
