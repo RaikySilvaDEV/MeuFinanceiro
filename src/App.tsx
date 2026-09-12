@@ -42,14 +42,13 @@ export default function App() {
     if (!user || !token) return
     api.loadData(token).then(remoteData => setData(normalizeData(remoteData))).catch(() => { setUser(null); setToken(''); setDataReady(false); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }).finally(() => { setLoading(false); setDataReady(true) })
   }, [user, token])
-  useEffect(() => {
+  const update = (next: Data) => {
+    setData(next)
     if (!user || !token || loading || !dataReady) return
-    const snapshot = data
     saveQueue.current = saveQueue.current
-      .then(() => api.saveData(token, snapshot))
+      .then(() => api.saveData(token, next))
       .catch(() => notify('Não foi possível salvar os dados no servidor.'))
-  }, [data, dataReady, loading, token, user])
-  const update = (next: Data) => setData(next)
+  }
   const navigate = (next: Tab) => {
     if (next === tab) return
     setTab(next)
