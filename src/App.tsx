@@ -16,7 +16,6 @@ export default function App() {
   const [token, setToken] = useState(() => readJson<string>('meu-financeiro-token', ''))
   const [data, setData] = useState<Data>(freshData)
   const [loading, setLoading] = useState(Boolean(user && token))
-  const [dataReady, setDataReady] = useState(false)
   const [tab, setTab] = useState<Tab>('home')
   const [pageLoading, setPageLoading] = useState(false)
   const [modal, setModal] = useState<'transaction' | 'fixed' | 'goal' | 'account' | 'card' | 'installment' | 'transfer' | 'password' | 'reserve' | null>(null)
@@ -40,11 +39,11 @@ export default function App() {
   }, [notice, noticeTone])
   useEffect(() => {
     if (!user || !token) return
-    api.loadData(token).then(remoteData => setData(normalizeData(remoteData))).catch(() => { setUser(null); setToken(''); setDataReady(false); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }).finally(() => { setLoading(false); setDataReady(true) })
+    api.loadData(token).then(remoteData => setData(normalizeData(remoteData))).catch(() => { setUser(null); setToken(''); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }).finally(() => { setLoading(false) })
   }, [user, token])
   const update = (next: Data) => {
     setData(next)
-    if (!user || !token || loading || !dataReady) return
+    if (!user || !token || loading) return
     saveQueue.current = saveQueue.current
       .then(() => api.saveData(token, next))
       .catch(() => notify('Não foi possível salvar os dados no servidor.'))
@@ -103,7 +102,7 @@ export default function App() {
     return { income, spent, pending, reserved, balance: initial + income - cashSpent, available: initial + income - cashSpent - pending, fixed: data.fixed.filter(f => f.active).reduce((s, f) => s + f.amount, 0) }
   }, [data])
 
-  if (!user) return <Auth onLogin={(u, nextToken) => { setLoading(true); setDataReady(false); setUser(u); setToken(nextToken); localStorage.setItem('meu-financeiro-session', JSON.stringify(u)); localStorage.setItem('meu-financeiro-token', nextToken) }} onRegister={(u, nextToken) => { setLoading(true); setDataReady(false); setUser(u); setToken(nextToken); setOnboarding(true); setData(freshData()); localStorage.setItem('meu-financeiro-session', JSON.stringify(u)); localStorage.setItem('meu-financeiro-token', nextToken) }} />
+  if (!user) return <Auth onLogin={(u, nextToken) => { setLoading(true); setUser(u); setToken(nextToken); localStorage.setItem('meu-financeiro-session', JSON.stringify(u)); localStorage.setItem('meu-financeiro-token', nextToken) }} onRegister={(u, nextToken) => { setLoading(true); setUser(u); setToken(nextToken); setOnboarding(true); setData(freshData()); localStorage.setItem('meu-financeiro-session', JSON.stringify(u)); localStorage.setItem('meu-financeiro-token', nextToken) }} />
   if (loading) return <LoadingScreen message="Carregando seu financeiro..." />
 
   const nav: [Tab, LucideIcon, string][] = [['home', LayoutDashboard, 'Início'], ['transactions', ArrowUpRight, 'Lançamentos'], ['fixed', Receipt, 'Contas fixas'], ['planning', BarChart3, 'Planejamento'], ['goals', Target, 'Metas'], ['accounts', Wallet, 'Contas'], ['cards', CreditCard, 'Cartões'], ['calendar', CalendarDays, 'Calendário'], ['reports', BarChart3, 'Relatórios']]
