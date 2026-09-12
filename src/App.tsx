@@ -5,7 +5,7 @@ import { categoriesFor, expenseCategories, finiteNonNegative, formatMoneyInput, 
 import Planning from './components/Planning'
 import { api } from './services/api'
 import { isCurrentMonth } from './domain/planning'
-import { AlertCircle, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, CreditCard, Info, LayoutDashboard, Pencil, Plus, Receipt, Repeat, Settings, Target, Trash2, Wallet, X } from 'lucide-react'
+import { AlertCircle, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays, Check, CheckCircle2, CreditCard, Info, LayoutDashboard, LogOut, Pencil, Plus, Receipt, Repeat, Settings, Target, Trash2, Wallet, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 export default function App() {
@@ -191,6 +191,7 @@ export default function App() {
       {tab === 'reports' && <Reports data={data} totals={totals} />}</>}
     </main>
     <nav className="bottom-nav">{nav.slice(0, 5).map(([id, Icon, label]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={18} />{label}</button>)}</nav>
+    <button className="mobile-logout" onClick={() => { setUser(null); setToken(''); localStorage.removeItem('meu-financeiro-session'); localStorage.removeItem('meu-financeiro-token') }}><LogOut size={17} />Sair</button>
     <button className="fab" onClick={() => setModal('transaction')} aria-label="Novo lançamento"><Plus size={25} /></button>
     {modal === 'transaction' && <Modal title={editing ? 'Editar lançamento' : 'Novo lançamento'} onClose={closeModal}><TransactionForm data={data} initial={data.transactions.find(t => t.id === editing)} onSubmit={saveTransaction} /></Modal>}
     {modal === 'fixed' && <Modal title={editing ? 'Editar conta fixa' : 'Nova conta fixa'} onClose={closeModal}><FixedForm data={data} initial={data.fixed.find(f => f.id === editing)} onSubmit={saveFixed} /></Modal>}
