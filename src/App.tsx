@@ -13,7 +13,7 @@ export default function App() {
     const stored = readJson<unknown>('meu-financeiro-session', null)
     return stored && typeof stored === 'object' && typeof (stored as User).id === 'string' ? stored as User : null
   })
-  const [token, setToken] = useState(() => readJson<string>('meu-financeiro-token', ''))
+  const [token, setToken] = useState(() => localStorage.getItem('meu-financeiro-token') || '')
   const [data, setData] = useState<Data>(freshData)
   const [loading, setLoading] = useState(Boolean(user && token))
   const [tab, setTab] = useState<Tab>('home')
@@ -42,7 +42,7 @@ export default function App() {
   }, [user, token])
   const update = (next: Data) => {
     setData(next)
-    const currentToken = readJson<string>('meu-financeiro-token', '')
+    const currentToken = localStorage.getItem('meu-financeiro-token') || ''
     if (!currentToken) return
     void api.saveData(currentToken, next).catch(() => notify('Não foi possível salvar os dados no servidor.'))
   }
